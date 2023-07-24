@@ -1,1 +1,1 @@
-print('wlecome')
+print('welcome')
