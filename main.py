@@ -27,34 +27,42 @@ class Board:
         square_no = row_no // square_size * square_size + col_no // square_size 
         return row_no, col_no, square_no
     
-    def fill_random_cell(self): #randomly chooses one square and a random cell within that square; checks if this cell already has any value assigned and if not, assigns random value from its possible values
+    def fill_random_cell(self):
         import random
         if self.if_whole_board_filled is not True:
             while True:
                 random_index = random.randint(0, len(self.cells) - 1)
                 random_cell = self.cells[random_index]
                 if len(random_cell.possible_values):
-                    print("all set")
                     break
-            try:
-                random_value_to_be_set = random.choice(list(random_cell.possible_values))
-                print(random_value_to_be_set)
-                random_cell.set_value(random_value_to_be_set)
-            except:
-                print("Exception, could not set randomly choosen value for this position", random_index, random_cell.value, random_cell.possible_values)
+            random_value_to_be_set = random.choice(list(random_cell.possible_values))
+            random_cell.set_value(random_value_to_be_set) 
+            """
+            sprawdz wartosci possible_values innych komorek po wpisaniu wartosci do komorki
+            gdy possible_values jakiejs komorki (bez wartosci) bedzie zbiorem pustym - if_assigning_value_forbidden, cofnij operacje
+            """
+            
+           
+    def if_any_cell_with_one_possible_value(self):
+        for cell in self.cells:
+            if len(cell.possible_values) == 1:
+                return True
+        return False
     
-    """def search_squares(self):
-        import random
-        if not self.if_whole_board_filled:
-            while True:
-                random_index = random.randint(0, len(self.squares) - 1)
-                random_square = self.squares[random_index]
-                if not random_square.if_whole_square_filled:
-                    for cell in random_square.square_cells:
-                        if len(cell.possible_values) == 1:
-                            cell.set_value(list(cell.possible_values)[0])"""
+    """def if_assigning_value_forbidden(self):
+        for cell in self.cells:
+            if (not cell.possible_values) and (cell.value is None):
+                return True
+        return False"""
     
-    def fill_diagonal(self):
+    def fill_cells_with_one_possible_value(self):
+        for cell in self.cells:
+            if len(cell.possible_values) == 1:
+                cell.set_value(list(cell.possible_values)[0])
+                self.print_rows()
+                print("\n\n")
+
+    def fill_diagonals(self):
         import random
         for row_index, row in enumerate(self.rows):
             random_value_to_be_set = random.choice(list(row.row_cells[row_index].possible_values))
@@ -63,8 +71,6 @@ class Board:
             if cell.possible_values:
                 random_value_to_be_set = random.choice(list(cell.possible_values))
                 cell.set_value(random_value_to_be_set)
-            else:
-                print("Error, possible_values: ", cell.possible_values)
 
     def if_whole_board_filled(self):
         for cell in self.cells:
@@ -138,12 +144,7 @@ class Square():
     def erase(self, value):
         for cell in self.square_cells:
             cell.erase(value)
-    
-    def if_whole_square_filled(self):
-        for cell in self.square_cells:
-            if cell.value == None:
-                return False
-        return True
+
 
 class Cell():
     def __init__(self, value_space):
@@ -160,14 +161,17 @@ class Cell():
             self.row.erase(value)
             self.column.erase(value)
             self.square.erase(value)
-        else:
-            print("This cell already has value set.")
-    
+
     def erase(self, value):
         self.possible_values.discard(value)
 
 
 if __name__=="__main__":
     board = Board()
-    board.fill_diagonal()
+    board.fill_diagonals()
+    i = 0
+    while not board.if_whole_board_filled(): #zle  - zostają komorki nie do uzupełnienia
+        while board.if_any_cell_with_one_possible_value():
+            board.fill_cells_with_one_possible_value()
+        board.fill_random_cell()
     board.print_rows()
