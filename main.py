@@ -1,5 +1,11 @@
+import random
+from math import sqrt
+from copy import deepcopy
+
+
 class Board:
-    board_size = 4
+    board_size = 9
+
     def __init__(self):
         self.rows = [Row() for row_number in range(self.board_size)]
         self.columns = [Column() for column_number in range(self.board_size)]
@@ -19,18 +25,20 @@ class Board:
     def print_columns(self):
         for column in self.columns:
             column.print_column()
-    
+
     def calculate_coords(self, cell_no):
         from math import sqrt
+
         square_size = int(sqrt(self.board_size))
-        row_no = cell_no // self.board_size 
-        col_no = cell_no % self.board_size 
-        square_no = row_no // square_size * square_size + col_no // square_size 
+        row_no = cell_no // self.board_size
+        col_no = cell_no % self.board_size
+        square_no = row_no // square_size * square_size + col_no // square_size
         return row_no, col_no, square_no
 
     def fill_squares_on_diagonal(self):
-        import random, math
-        diagonal_square_indexes = range(0, self.board_size, int(math.sqrt(self.board_size)) + 1)
+        diagonal_square_indexes = range(
+            0, self.board_size, int(sqrt(self.board_size)) + 1
+        )
         for square_no in diagonal_square_indexes:
             possible_values = list(range(1, self.board_size + 1))
             for cell in self.squares[int(square_no)].square_cells:
@@ -49,27 +57,29 @@ class Board:
             if not self.cells[cell_no].value:
                 return self.calculate_coords(cell_no)
         return None
-    
+
     def solve_sudoku(self):
-        #besed on backtracking algorithm
-        #checks if there are any empty cells on the board - find_empty_cell returns the coordinates of the first empty cell it finds
+        # sometimes works for 4x4 board, doesn't work for 9x9(yet)
+        # besed on backtracking algorithm
+        # checks if there are any empty cells on the board - find_empty_cell returns the coordinates of the first empty cell it finds
         if not self.find_empty_cell():
             return True
-        else: 
-            row_no, col_no, square_no = self.find_empty_cell()
+        else:
+            row_no, col_no, _ = self.find_empty_cell()
         cell = self.rows[row_no].row_cells[col_no]
-        #iterates through all possile_values for this cell
-        #set value
-        #calling solve_sudoku for resulted board <- id does not work, undo set_cell and try another value from possible_values
+        # iterate through all possile_values for this cell
+        # set value
+        # call `solve_sudoku` for resulted board # TODO: <- if does not work, undo set_cell and try another value from possible_values
         for value in sorted(list(cell.possible_values)):
             cell.set_value(value)
+            self.print_rows()
             if self.solve_sudoku():
                 return True
-            cell.undo_set_value()
+            cell.undo_set_value(value)
         return False
 
 
-class Row():
+class Row:
     def __init__(self):
         self.row_cells = []
 
@@ -78,16 +88,16 @@ class Row():
         for cell in self.row_cells:
             possible_values = possible_values.union(cell.possible_values)
         return possible_values
-    
+
     def print_row(self):
         for cell in self.row_cells:
-            print(cell.value, end = "\t")
+            print(cell.value, end="\t")
         print("\n")
-    
+
     def append(self, cell):
         self.row_cells.append(cell)
         cell.row = self
-    
+
     def erase(self, value):
         for cell in self.row_cells:
             cell.erase(value)
@@ -97,7 +107,7 @@ class Row():
             cell.undo_erase(value)
 
 
-class Column():
+class Column:
     def __init__(self):
         self.column_cells = []
 
@@ -109,7 +119,7 @@ class Column():
 
     def print_column(self):
         for cell in self.column_cells:
-            print(cell.value, end = "\t")
+            print(cell.value, end="\t")
         print("\n")
 
     def append(self, cell):
@@ -125,30 +135,30 @@ class Column():
             cell.undo_erase(value)
 
 
-class Square():
+class Square:
     def __init__(self):
         self.square_cells = []
-    
+
     def get_possible_values(self):
         possible_values = set()
         for cell in self.square_cells:
             possible_values = possible_values.union(cell.possible_values)
         return possible_values
-    
+
     def append(self, cell):
         self.square_cells.append(cell)
         cell.square = self
-    
+
     def erase(self, value):
         for cell in self.square_cells:
             cell.erase(value)
-    
+
     def undo_erase(self, value):
         for cell in self.square_cells:
             cell.undo_erase(value)
 
 
-class Cell():
+class Cell:
     def __init__(self, value_space):
         self.possible_values = set(range(1, value_space + 1))
         self.value = None
@@ -164,24 +174,31 @@ class Cell():
             self.column.erase(value)
             self.square.erase(value)
 
-    def undo_set_value(self):
-        value = self.value
+    def undo_set_value(self, value):
+        self.possible_values.add(value)
+
         self.value = None
+
         self.row.undo_erase(value)
         self.column.undo_erase(value)
         self.square.undo_erase(value)
-        self.possible_values = self.row.get_possible_values().intersection(self.column.get_possible_values(), self.square.get_possible_values())
+        self.possible_values = self.row.get_possible_values().intersection(
+            self.column.get_possible_values(), self.square.get_possible_values()
+        )
 
     def erase(self, value):
         if value in self.possible_values:
             self.possible_values.remove(value)
 
     def undo_erase(self, value):
-        self.possible_values = self.row.get_possible_values().intersection(self.column.get_possible_values(), self.square.get_possible_values())
+        self.possible_values = self.row.get_possible_values().intersection(
+            self.column.get_possible_values(), self.square.get_possible_values()
+        )
 
 
-if __name__=="__main__":
+if __name__ == "__main__":
     import random
+
     board = Board()
     board.fill_squares_on_diagonal()
     if not board.solve_sudoku():
