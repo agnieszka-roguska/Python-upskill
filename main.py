@@ -200,7 +200,7 @@ if __name__ == "__main__":
     import random
 
     board = Board()
-    board.fill_squares_on_diagonal()
+    #board.fill_squares_on_diagonal()
     if not board.solve_sudoku():
         print("Failed")
     board.print_rows()
