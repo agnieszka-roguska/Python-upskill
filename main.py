@@ -69,7 +69,7 @@ class Board:
         cell = self.rows[row_no].row_cells[col_no]
         # iterate through all possile_values for this cell
         # set value
-        # call `solve_sudoku` for resulted board # TODO: <- if does not work, undo set_cell and try another value from possible_values
+        # call `solve_sudoku` for resulted board <- if does not work, undo set_cell and try another value from possible_values
         for value in sorted(list(cell.possible_values)):
             cell.set_value(value)
             self.print_rows()
@@ -200,7 +200,7 @@ if __name__ == "__main__":
     import random
 
     board = Board()
-    board.fill_squares_on_diagonal()
+    #board.fill_squares_on_diagonal()
     if not board.solve_sudoku():
         print("Failed")
     board.print_rows()
