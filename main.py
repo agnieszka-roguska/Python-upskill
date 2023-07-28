@@ -1,5 +1,5 @@
 class Board:
-    board_size = 9
+    board_size = 4
     def __init__(self):
         self.rows = [Row() for row_number in range(self.board_size)]
         self.columns = [Column() for column_number in range(self.board_size)]
@@ -14,6 +14,7 @@ class Board:
     def print_rows(self):
         for row in self.rows:
             row.print_row()
+        print("\n\n")
 
     def print_columns(self):
         for column in self.columns:
@@ -26,57 +27,46 @@ class Board:
         col_no = cell_no % self.board_size 
         square_no = row_no // square_size * square_size + col_no // square_size 
         return row_no, col_no, square_no
-    
-    def fill_random_cell(self):
-        import random
-        if self.if_whole_board_filled is not True:
-            while True:
-                random_index = random.randint(0, len(self.cells) - 1)
-                random_cell = self.cells[random_index]
-                if len(random_cell.possible_values):
-                    break
-            random_value_to_be_set = random.choice(list(random_cell.possible_values))
-            random_cell.set_value(random_value_to_be_set) 
-            """
-            sprawdz wartosci possible_values innych komorek po wpisaniu wartosci do komorki
-            gdy possible_values jakiejs komorki (bez wartosci) bedzie zbiorem pustym - if_assigning_value_forbidden, cofnij operacje
-            """
-            
-           
-    def if_any_cell_with_one_possible_value(self):
-        for cell in self.cells:
-            if len(cell.possible_values) == 1:
-                return True
-        return False
-    
-    """def if_assigning_value_forbidden(self):
-        for cell in self.cells:
-            if (not cell.possible_values) and (cell.value is None):
-                return True
-        return False"""
-    
-    def fill_cells_with_one_possible_value(self):
-        for cell in self.cells:
-            if len(cell.possible_values) == 1:
-                cell.set_value(list(cell.possible_values)[0])
-                self.print_rows()
-                print("\n\n")
 
-    def fill_diagonals(self):
-        import random
-        for row_index, row in enumerate(self.rows):
-            random_value_to_be_set = random.choice(list(row.row_cells[row_index].possible_values))
-            row.row_cells[row_index].set_value(random_value_to_be_set)
-            cell = row.row_cells[self.board_size - row_index - 1]
-            if cell.possible_values:
-                random_value_to_be_set = random.choice(list(cell.possible_values))
-                cell.set_value(random_value_to_be_set)
+    def fill_squares_on_diagonal(self):
+        import random, math
+        diagonal_square_indexes = range(0, self.board_size, int(math.sqrt(self.board_size)) + 1)
+        for square_no in diagonal_square_indexes:
+            possible_values = list(range(1, self.board_size + 1))
+            for cell in self.squares[int(square_no)].square_cells:
+                random_value = random.choice(possible_values)
+                cell.set_value(random_value)
+                possible_values.remove(random_value)
 
     def if_whole_board_filled(self):
         for cell in self.cells:
             if cell.value == None:
                 return False
         return True
+
+    def find_empty_cell(self):
+        for cell_no in range(len(self.cells)):
+            if not self.cells[cell_no].value:
+                return self.calculate_coords(cell_no)
+        return None
+    
+    def solve_sudoku(self):
+        #besed on backtracking algorithm
+        #checks if there are any empty cells on the board - find_empty_cell returns the coordinates of the first empty cell it finds
+        if not self.find_empty_cell():
+            return True
+        else: 
+            row_no, col_no, square_no = self.find_empty_cell()
+        cell = self.rows[row_no].row_cells[col_no]
+        #iterates through all possile_values for this cell
+        #set value
+        #calling solve_sudoku for resulted board <- id does not work, undo set_cell and try another value from possible_values
+        for value in sorted(list(cell.possible_values)):
+            cell.set_value(value)
+            if self.solve_sudoku():
+                return True
+            cell.undo_set_value()
+        return False
 
 
 class Row():
@@ -102,6 +92,10 @@ class Row():
         for cell in self.row_cells:
             cell.erase(value)
 
+    def undo_erase(self, value):
+        for cell in self.row_cells:
+            cell.undo_erase(value)
+
 
 class Column():
     def __init__(self):
@@ -126,6 +120,10 @@ class Column():
         for cell in self.column_cells:
             cell.erase(value)
 
+    def undo_erase(self, value):
+        for cell in self.column_cells:
+            cell.undo_erase(value)
+
 
 class Square():
     def __init__(self):
@@ -144,6 +142,10 @@ class Square():
     def erase(self, value):
         for cell in self.square_cells:
             cell.erase(value)
+    
+    def undo_erase(self, value):
+        for cell in self.square_cells:
+            cell.undo_erase(value)
 
 
 class Cell():
@@ -162,16 +164,26 @@ class Cell():
             self.column.erase(value)
             self.square.erase(value)
 
+    def undo_set_value(self):
+        value = self.value
+        self.value = None
+        self.row.undo_erase(value)
+        self.column.undo_erase(value)
+        self.square.undo_erase(value)
+        self.possible_values = self.row.get_possible_values().intersection(self.column.get_possible_values(), self.square.get_possible_values())
+
     def erase(self, value):
-        self.possible_values.discard(value)
+        if value in self.possible_values:
+            self.possible_values.remove(value)
+
+    def undo_erase(self, value):
+        self.possible_values = self.row.get_possible_values().intersection(self.column.get_possible_values(), self.square.get_possible_values())
 
 
 if __name__=="__main__":
+    import random
     board = Board()
-    board.fill_diagonals()
-    i = 0
-    while not board.if_whole_board_filled(): #zle  - zostają komorki nie do uzupełnienia
-        while board.if_any_cell_with_one_possible_value():
-            board.fill_cells_with_one_possible_value()
-        board.fill_random_cell()
+    board.fill_squares_on_diagonal()
+    if not board.solve_sudoku():
+        print("Failed")
     board.print_rows()
