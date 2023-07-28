@@ -1,6 +1,5 @@
 import random
 from math import sqrt
-from copy import deepcopy
 
 
 class Board:
@@ -22,35 +21,17 @@ class Board:
             row.print_row()
         print("\n\n")
 
-    def print_columns(self):
-        for column in self.columns:
-            column.print_column()
-
     def calculate_coords(self, cell_no):
-        from math import sqrt
-
         square_size = int(sqrt(self.board_size))
         row_no = cell_no // self.board_size
         col_no = cell_no % self.board_size
         square_no = row_no // square_size * square_size + col_no // square_size
         return row_no, col_no, square_no
-
-    def fill_squares_on_diagonal(self):
-        diagonal_square_indexes = range(
-            0, self.board_size, int(sqrt(self.board_size)) + 1
-        )
-        for square_no in diagonal_square_indexes:
-            possible_values = list(range(1, self.board_size + 1))
-            for cell in self.squares[int(square_no)].square_cells:
-                random_value = random.choice(possible_values)
-                cell.set_value(random_value)
-                possible_values.remove(random_value)
-
-    def if_whole_board_filled(self):
-        for cell in self.cells:
-            if cell.value == None:
-                return False
-        return True
+    
+    def fill_first_row(self):
+        for cell in self.rows[0].row_cells:
+            random_value = random.choice(list(cell.possible_values))
+            cell.set_value(random_value)
 
     def find_empty_cell(self):
         for cell_no in range(len(self.cells)):
@@ -59,7 +40,6 @@ class Board:
         return None
 
     def solve_sudoku(self):
-        # sometimes works for 4x4 board, doesn't work for 9x9(yet)
         # besed on backtracking algorithm
         # checks if there are any empty cells on the board - find_empty_cell returns the coordinates of the first empty cell it finds
         if not self.find_empty_cell():
@@ -72,7 +52,6 @@ class Board:
         # call `solve_sudoku` for resulted board <- if does not work, undo set_cell and try another value from possible_values
         for value in sorted(list(cell.possible_values)):
             cell.set_value(value)
-            self.print_rows()
             if self.solve_sudoku():
                 return True
             cell.undo_set_value(value)
@@ -116,11 +95,6 @@ class Column:
         for cell in self.column_cells:
             get_possible_values = get_possible_values.union(cell.possible_values)
         return get_possible_values
-
-    def print_column(self):
-        for cell in self.column_cells:
-            print(cell.value, end="\t")
-        print("\n")
 
     def append(self, cell):
         self.column_cells.append(cell)
@@ -198,9 +172,10 @@ class Cell:
 
 if __name__ == "__main__":
     import random
-
+    
+    #fill in the first row randomly
+    #fill the remaining cells using backtracking
     board = Board()
-    #board.fill_squares_on_diagonal()
-    if not board.solve_sudoku():
-        print("Failed")
+    board.fill_first_row()
+    board.solve_sudoku()
     board.print_rows()
