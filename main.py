@@ -62,7 +62,7 @@ class Board:
     
     def remove_random_cell_value(self):
         """
-        Randomly chooses one cell on the board and checks if this cell was already checked. Removse value from this cell and check how many possible values this cell has after
+        Randomly selects one cell and checks if has not been already selected. Removes value from this cell and checks how many possible values this cell has - if more than 1, undo (set this value again)
         """
         cell = self.get_random_cell()
         if cell in self.cells_checked:
@@ -207,7 +207,7 @@ if __name__ == "__main__":
     for row in board.rows:
         for cell in row.row_cells:
             if not cell.value:
-                sudoku_file.write('0' + ", \t")
+                sudoku_file.write('X' + ", \t")
             else:
                 sudoku_file.write(str(cell.value) + ", \t")
         sudoku_file.write("\n\n")
