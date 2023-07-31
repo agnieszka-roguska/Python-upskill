@@ -56,6 +56,29 @@ class Board:
                 return True
             cell.undo_set_value(value)
         return False
+    
+    def get_random_cell(self):
+        return random.choice(self.cells)
+    
+    def remove_random_cell_value(self):
+        """
+        Randomly chooses one cell on the board and checks if this cell was already checked. Removse value from this cell and check how many possible values this cell has after
+        """
+        cell = self.get_random_cell()
+        if cell in self.cells_checked:
+            return False
+        self.cells_checked.append(cell)
+        removed_value = cell.value
+        cell.undo_set_value(removed_value)
+        if len(cell.possible_values) > 1:
+            cell.set_value(removed_value)
+            return False
+        return True
+    
+    def create_puzzle(self):
+        self.cells_checked = []
+        while set(self.cells) != set(self.cells_checked):
+            self.remove_random_cell_value()
 
 
 class Row:
@@ -150,9 +173,7 @@ class Cell:
 
     def undo_set_value(self, value):
         self.possible_values.add(value)
-
         self.value = None
-
         self.row.undo_erase(value)
         self.column.undo_erase(value)
         self.square.undo_erase(value)
@@ -175,7 +196,19 @@ if __name__ == "__main__":
     
     #fill in the first row randomly
     #fill the remaining cells using backtracking
+    #remove some values from the board to create a puzzle
     board = Board()
     board.fill_first_row()
     board.solve_sudoku()
+    board.create_puzzle()
     board.print_rows()
+    sudoku_file = open("sudoku_puzzle.txt", "a")
+    sudoku_file.truncate(0)
+    for row in board.rows:
+        for cell in row.row_cells:
+            if not cell.value:
+                sudoku_file.write('0' + ", \t")
+            else:
+                sudoku_file.write(str(cell.value) + ", \t")
+        sudoku_file.write("\n\n")
+    sudoku_file.close()
