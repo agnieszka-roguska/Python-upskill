@@ -15,11 +15,17 @@ class Board:
             self.rows[row_no].append(cell)
             self.columns[col_no].append(cell)
             self.squares[square_no].append(cell)
+        self.cells_checked = []
 
-    def print_rows(self):
+    def __str__(self):
+        result = ''
         for row in self.rows:
-            row.print_row()
-        print("\n\n")
+            result += row.get_row_str()
+            result += "\n\n"
+        return result
+    
+    def get_board_str(self):
+        return self.__str__()
 
     def calculate_coords(self, cell_no):
         square_size = int(sqrt(self.board_size))
@@ -40,7 +46,7 @@ class Board:
         return None
 
     def solve_sudoku(self):
-        # besed on backtracking algorithm
+        # based on backtracking algorithm
         # checks if there are any empty cells on the board - find_empty_cell returns the coordinates of the first empty cell it finds
         if not self.find_empty_cell():
             return True
@@ -76,7 +82,6 @@ class Board:
         return True
     
     def create_puzzle(self):
-        self.cells_checked = []
         while set(self.cells) != set(self.cells_checked):
             self.remove_random_cell_value()
 
@@ -85,16 +90,25 @@ class Row:
     def __init__(self):
         self.row_cells = []
 
+    def __str__(self):
+        result = ''
+        for cell in self.row_cells:
+            if not cell.value:
+                result += "X"
+            else:
+                result += str(cell.value)
+            if cell != self.row_cells[-1]:
+                result += ",\t"
+        return result
+    
+    def get_row_str(self):
+        return self.__str__()
+
     def get_possible_values(self):
         possible_values = set()
         for cell in self.row_cells:
             possible_values = possible_values.union(cell.possible_values)
         return possible_values
-
-    def print_row(self):
-        for cell in self.row_cells:
-            print(cell.value, end="\t")
-        print("\n")
 
     def append(self, cell):
         self.row_cells.append(cell)
@@ -194,21 +208,11 @@ class Cell:
 if __name__ == "__main__":
     import random
     
-    #fill in the first row randomly
-    #fill the remaining cells using backtracking
-    #remove some values from the board to create a puzzle
     board = Board()
     board.fill_first_row()
     board.solve_sudoku()
     board.create_puzzle()
-    board.print_rows()
-    sudoku_file = open("sudoku_puzzle.txt", "a")
-    sudoku_file.truncate(0)
-    for row in board.rows:
-        for cell in row.row_cells:
-            if not cell.value:
-                sudoku_file.write('X' + ", \t")
-            else:
-                sudoku_file.write(str(cell.value) + ", \t")
-        sudoku_file.write("\n\n")
-    sudoku_file.close()
+    print(board)
+    with open("sudoku_puzzle.txt", "w") as sudoku_file:
+        sudoku_file.write(board.get_board_str())
+        sudoku_file.close()
