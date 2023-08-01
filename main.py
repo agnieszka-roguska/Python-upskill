@@ -35,7 +35,7 @@ class Board:
         return row_no, col_no, square_no
     
     def fill_first_row(self):
-        for cell in self.rows[0].row_cells:
+        for cell in self.rows[0].cells:
             random_value = random.choice(list(cell.possible_values))
             cell.set_value(random_value)
 
@@ -52,7 +52,7 @@ class Board:
             return True
         else:
             row_no, col_no, _ = self.find_empty_cell()
-        cell = self.rows[row_no].row_cells[col_no]
+        cell = self.rows[row_no].cells[col_no]
         # iterate through all possile_values for this cell
         # set value
         # call `solve_sudoku` for resulted board <- if does not work, undo set_cell and try another value from possible_values
@@ -86,87 +86,55 @@ class Board:
             self.remove_random_cell_value()
 
 
-class Row:
+class Segment:
     def __init__(self):
-        self.row_cells = []
+        self.cells = []
+    
+    def get_possible_values(self):
+        possible_values = set()
+        for cell in self.cells:
+            possible_values = possible_values.union(cell.possible_values)
+        return possible_values
 
+    def erase(self, value):
+        for cell in self.cells:
+            cell.erase(value)
+
+    def undo_erase(self, value):
+        for cell in self.cells:
+            cell.undo_erase(value)
+    
+    
+class Row(Segment):
     def __str__(self):
         result = ''
-        for cell in self.row_cells:
+        for cell in self.cells:
             if not cell.value:
                 result += "X"
             else:
                 result += str(cell.value)
-            if cell != self.row_cells[-1]:
+            if cell != self.cells[-1]:
                 result += ",\t"
         return result
     
     def get_row_str(self):
         return self.__str__()
-
-    def get_possible_values(self):
-        possible_values = set()
-        for cell in self.row_cells:
-            possible_values = possible_values.union(cell.possible_values)
-        return possible_values
-
+    
     def append(self, cell):
-        self.row_cells.append(cell)
+        self.cells.append(cell)
         cell.row = self
 
-    def erase(self, value):
-        for cell in self.row_cells:
-            cell.erase(value)
 
-    def undo_erase(self, value):
-        for cell in self.row_cells:
-            cell.undo_erase(value)
-
-
-class Column:
-    def __init__(self):
-        self.column_cells = []
-
-    def get_possible_values(self):
-        get_possible_values = set()
-        for cell in self.column_cells:
-            get_possible_values = get_possible_values.union(cell.possible_values)
-        return get_possible_values
-
+class Column(Segment):
     def append(self, cell):
-        self.column_cells.append(cell)
+        self.cells.append(cell)
         cell.column = self
 
-    def erase(self, value):
-        for cell in self.column_cells:
-            cell.erase(value)
 
-    def undo_erase(self, value):
-        for cell in self.column_cells:
-            cell.undo_erase(value)
-
-
-class Square:
-    def __init__(self):
-        self.square_cells = []
-
-    def get_possible_values(self):
-        possible_values = set()
-        for cell in self.square_cells:
-            possible_values = possible_values.union(cell.possible_values)
-        return possible_values
-
+class Square(Segment):
     def append(self, cell):
-        self.square_cells.append(cell)
+        self.cells.append(cell)
         cell.square = self
-
-    def erase(self, value):
-        for cell in self.square_cells:
-            cell.erase(value)
-
-    def undo_erase(self, value):
-        for cell in self.square_cells:
-            cell.undo_erase(value)
 
 
 class Cell:
